@@ -1,0 +1,10 @@
+import { ReactNode } from "react";
+
+export default function Badge({ icon, children }: { icon?: ReactNode; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-medium text-accent">
+      {icon}
+      {children}
+    </span>
+  );
+}

@@ -1,0 +1,236 @@
+====================================================================
+ CACHE MEMORY — A SIMPLE GUIDE
+ (and how to use the CacheSim website)
+====================================================================
+
+This guide explains cache memory in plain, simple English. No prior
+computer science knowledge needed. After reading this, you should be
+able to use the CacheSim simulator and understand what it is showing
+you.
+
+
+--------------------------------------------------------------------
+1. WHAT IS CACHE MEMORY?
+--------------------------------------------------------------------
+
+Your computer has a CPU (the "brain") and RAM (the "main memory" where
+programs and data are stored). The problem is: the CPU is VERY fast,
+but RAM is much slower to talk to. Every time the CPU needs data from
+RAM, it has to wait — and that wastes a lot of time.
+
+To fix this, computers add a small, super-fast memory called CACHE
+that sits between the CPU and RAM. Think of it like this:
+
+    CPU  <--->  CACHE  <--->  RAM
+
+  - RAM is like a big warehouse far away. It holds everything, but
+    it takes a while to walk there and back.
+
+  - CACHE is like a small drawer right next to your desk. It only
+    holds a few things, but you can grab them instantly.
+
+The idea is simple: keep a copy of the data you use often (or just
+used) in the cache, so next time you need it, you don't have to go
+all the way to RAM.
+
+This works well because of two everyday-life patterns:
+
+  - TEMPORAL LOCALITY: If you used something a moment ago, you'll
+    probably use it again soon. (Example: re-reading the same line
+    of a recipe while cooking.)
+
+  - SPATIAL LOCALITY: If you used something, you'll probably need
+    the stuff right next to it soon too. (Example: when you grab one
+    egg from the carton, you'll probably grab another one next.)
+
+
+--------------------------------------------------------------------
+2. CACHE HIT vs CACHE MISS
+--------------------------------------------------------------------
+
+Every time the CPU asks for some data, one of two things happens:
+
+  - CACHE HIT  = the data is already in the cache. Fast! No need to
+    go to RAM.
+
+  - CACHE MISS = the data is NOT in the cache. The computer has to
+    fetch it from RAM (slow), and while it's at it, it stores a copy
+    in the cache for next time.
+
+A good cache design tries to get as many HITS as possible. The
+percentage of requests that are hits is called the HIT RATIO — the
+higher, the better.
+
+
+--------------------------------------------------------------------
+3. HOW DOES DATA GET "PLACED" IN THE CACHE?
+--------------------------------------------------------------------
+
+The cache is much smaller than RAM, so it can only hold a small piece
+of everything. RAM is split into equal-sized chunks called BLOCKS,
+and when the CPU asks for one byte, the whole block containing it is
+copied into the cache (because of spatial locality — nearby stuff is
+probably needed too).
+
+The cache itself is made of a limited number of "slots" called
+CACHE LINES. So we need a rule to decide: "Given a memory block, which
+cache line(s) is it allowed to go into?" This rule is called the
+MAPPING POLICY. CacheSim supports three:
+
+  a) DIRECT MAPPED
+     Every block has exactly ONE possible cache line it can go to
+     (like an assigned parking spot). Simple and fast to check, but
+     if two blocks keep fighting for the same spot, they keep kicking
+     each other out — this is called "thrashing."
+
+  b) FULLY ASSOCIATIVE
+     A block can go into ANY free cache line (like a parking lot with
+     no assigned spots — park anywhere). No fighting over spots, but
+     the hardware has to check every single line to find out if
+     something is already cached, which is expensive to build.
+
+  c) SET ASSOCIATIVE (the middle ground, and the most common in real
+     CPUs)
+     The cache is split into groups called SETS. Each block is
+     assigned to exactly one set (like an assigned parking ROW), but
+     within that set/row it can use any open spot. This is written as
+     "N-way set associative" — e.g. "4-way" means each set has 4
+     spots.
+
+     Direct Mapped = "1-way" set associative.
+     Fully Associative = one giant set that holds everything.
+
+
+--------------------------------------------------------------------
+4. HOW AN ADDRESS IS SPLIT UP: TAG / INDEX / OFFSET
+--------------------------------------------------------------------
+
+Every memory address the CPU asks for gets broken into three parts so
+the cache hardware can quickly figure out where to look:
+
+    | ------- TAG ------- | -- INDEX -- | -- OFFSET -- |
+
+  - OFFSET: which byte inside the block we want (depends on block
+    size). E.g. a 16-byte block needs 4 offset bits (2^4 = 16).
+
+  - INDEX: which SET (or line, for direct mapping) this address
+    belongs to. This is how the cache knows exactly where to look
+    without searching everything (except in fully associative mode,
+    where there's no index — every line must be checked).
+
+  - TAG: the "ID card" stored alongside the data, used to confirm
+    "yes, this cached block really is the one you're looking for" and
+    not some other block that happens to share the same index.
+
+In the CacheSim simulator, the "Address Breakdown" panel shows you
+exactly how the current address splits into these three parts, in
+both binary and hex.
+
+
+--------------------------------------------------------------------
+5. WHAT HAPPENS WHEN THE CACHE IS FULL? (REPLACEMENT POLICIES)
+--------------------------------------------------------------------
+
+Eventually, every line/spot in a set gets used up. When a MISS happens
+and there's no free spot left, the cache has to kick something out
+(this is called EVICTION) to make room for the new block. Which one
+gets kicked out depends on the REPLACEMENT POLICY:
+
+  - LRU (Least Recently Used)
+    Kick out whichever line hasn't been used for the longest time.
+    Usually gives the best hit ratio, but requires tracking "last
+    used" timestamps for every line.
+
+  - FIFO (First-In, First-Out)
+    Kick out whichever line has been sitting in the cache the
+    longest, regardless of how often it's been used since. Simpler
+    to implement than LRU.
+
+  - RANDOM
+    Just pick a random line in the set and kick it out. Sounds silly,
+    but it's very cheap to build in hardware, and in practice it
+    performs surprisingly close to LRU.
+
+These policies only matter for Fully Associative and Set Associative
+caches (Direct Mapped has only one possible spot per block, so there's
+never a choice to make).
+
+
+--------------------------------------------------------------------
+6. HOW TO USE THE CACHESIM WEBSITE
+--------------------------------------------------------------------
+
+STEP 1 — Go to the Simulator page.
+  From the home page, click "Start Simulation" (or go to /simulator).
+
+STEP 2 — Set up the cache (top-left panel, "Cache Configuration").
+  - Cache Size: total size of the cache in bytes.
+  - Block Size: size of each block/line in bytes.
+  - Mapping Policy: Direct Mapped / Fully Associative / Set
+    Associative.
+  - Associativity: only shown for Set Associative — how many ways
+    (spots) per set.
+  - Replacement Policy: LRU / FIFO / Random.
+
+STEP 3 — Enter a memory trace (top-right panel, "Memory Addresses").
+  Type one address per line, in hex (like 0x0004) or plain decimal
+  numbers. Or just click "Generate Random" to get a random trace.
+  If a line is invalid, it will be outlined in red with an
+  explanation.
+
+STEP 4 — Run it.
+  - "Step" walks through the trace one address at a time.
+  - "Run" plays through the whole trace automatically (click again,
+    now labeled "Pause", to stop it).
+  - "Reset" clears progress and starts over with the current
+    settings.
+
+STEP 5 — Read the results.
+  - "Address Breakdown" shows how the current address splits into
+    Tag / Index / Offset.
+  - "Cache Grid" shows every set and line in the cache: whether it's
+    valid, what tag it holds, and what memory block it represents.
+    The row that was just touched is highlighted blue (HIT) or red
+    (MISS).
+  - "Total Hits / Total Misses / Hit Ratio" at the bottom summarize
+    performance across the whole trace so far.
+
+TIP: Try the same address trace with different Mapping Policies or
+Replacement Policies and watch how the Hit Ratio changes. That's the
+whole point of the tool — seeing WHY these design choices matter,
+instead of just reading about them.
+
+
+--------------------------------------------------------------------
+7. QUICK GLOSSARY
+--------------------------------------------------------------------
+
+CPU              The processor; does the actual computing.
+RAM              Main memory; big but slow compared to cache.
+Cache            Small, fast memory that stores copies of recently
+                 used data.
+Block            A fixed-size chunk of memory that moves between RAM
+                 and cache together.
+Cache Line       A "slot" in the cache that can hold one block.
+Set              A group of cache lines (used in set-associative
+                 caches).
+Way              One "slot" within a set. "4-way" = 4 lines per set.
+Hit              The requested data was already in the cache.
+Miss             The requested data was not in the cache (had to
+                 fetch from RAM).
+Hit Ratio        Percent of requests that were hits.
+Tag              The part of an address used to confirm a cache line
+                 holds the right block.
+Index            The part of an address used to find which set to
+                 look in.
+Offset           The part of an address that picks the exact byte
+                 within a block.
+Eviction         Removing a block from the cache to make room for a
+                 new one.
+LRU              Evict the block used longest ago.
+FIFO             Evict the block that arrived first.
+Random           Evict a random block.
+
+====================================================================
+ End of guide.
+====================================================================
