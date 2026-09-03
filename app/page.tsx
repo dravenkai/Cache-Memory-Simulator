@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center">
       <section className="flex w-full max-w-2xl flex-col items-center px-4 py-16 text-center sm:px-6">
-        <Badge
+        {/* <Badge
           icon={
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.4 7.6H22l-6.2 4.5 2.4 7.6L12 17.2l-6.2 4.5 2.4-7.6L2 9.6h7.6z" />
@@ -23,7 +23,7 @@ export default function Home() {
           }
         >
           Academic Tooling v2.0
-        </Badge>
+        </Badge> */}
 
         <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
           Master Cache
