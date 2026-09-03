@@ -6,6 +6,7 @@ import {
   accessCache,
   createCache,
   formatHex,
+  generateAddressTrace,
   parseAddress,
   validateConfig,
   waysFor,
@@ -244,5 +245,32 @@ describe("formatHex", () => {
 
   it("pads to the requested digit count", () => {
     expect(formatHex(5, 2)).toBe("0x05");
+  });
+});
+
+describe("generateAddressTrace", () => {
+  it("generates repeated block pairs so random traces demonstrate hits", () => {
+    const c = config({ blockSize: 16 });
+    const randomValues = [0.1, 0, 0.5, 0.2, 0.1, 0.6, 0.3, 0.2, 0.7, 0.4, 0.3, 0.8];
+    let randomIndex = 0;
+    const trace = generateAddressTrace(c, 8, () => randomValues[randomIndex++]);
+
+    expect(trace).toHaveLength(8);
+
+    const parsed = trace.map((raw) => parseAddress(raw));
+    for (let i = 0; i < parsed.length; i += 2) {
+      expect(parsed[i]).not.toBeNull();
+      expect(parsed[i + 1]).not.toBeNull();
+      expect(Math.floor(parsed[i]! / c.blockSize)).toBe(Math.floor(parsed[i + 1]! / c.blockSize));
+    }
+
+    let cache = createCache(c);
+    const results = parsed.map((address) => {
+      const access = accessCache(cache, c, address!);
+      cache = access.state;
+      return access.result;
+    });
+
+    expect(results.filter((result) => result.hit)).toHaveLength(4);
   });
 });

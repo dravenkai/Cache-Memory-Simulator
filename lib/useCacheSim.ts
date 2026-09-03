@@ -9,6 +9,7 @@ import {
   MAX_ADDRESS,
   accessCache,
   createCache,
+  generateAddressTrace,
   parseAddress,
   validateConfig,
 } from "./cache-sim";
@@ -19,11 +20,6 @@ export interface AddressIssue {
   index: number;
   raw: string;
   reason: string;
-}
-
-function randomAddress(maxAddress: number): string {
-  const addr = Math.floor(Math.random() * maxAddress);
-  return "0x" + addr.toString(16).toUpperCase().padStart(4, "0");
 }
 
 export function useCacheSim() {
@@ -69,12 +65,29 @@ export function useCacheSim() {
   }, [config]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   const setConfig = useCallback((updater: (prev: CacheConfig) => CacheConfig) => {
     setConfigState(updater);
+  }, []);
+
+  const updateAddresses = useCallback(
+    (nextAddresses: string[]) => {
+      setAddresses(nextAddresses);
+      reset();
+    },
+    [reset]
+  );
+
+  const stopRun = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setRunning(false);
   }, []);
 
   const doStep = useCallback(() => {
@@ -90,21 +103,17 @@ export function useCacheSim() {
       // Invalid address: surface it instead of silently swallowing the step.
       setLastSkipped({ index: step, raw });
     }
-    setStep((s) => s + 1);
-  }, [step, addresses, config, cache, configError]);
+    const nextStep = step + 1;
+    setStep(nextStep);
+    if (running && nextStep >= addresses.length) {
+      stopRun();
+    }
+  }, [step, addresses, config, cache, configError, running, stopRun]);
 
   const doStepRef = useRef(doStep);
   useEffect(() => {
     doStepRef.current = doStep;
   }, [doStep]);
-
-  const stopRun = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setRunning(false);
-  }, []);
 
   const run = useCallback(() => {
     if (running || configError) return;
@@ -115,25 +124,18 @@ export function useCacheSim() {
   }, [running, configError]);
 
   useEffect(() => {
-    if ((step >= addresses.length || configError) && running) {
-      stopRun();
-    }
-  }, [step, addresses.length, configError, running, stopRun]);
-
-  useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
   const clearAddresses = useCallback(() => {
-    setAddresses([]);
-  }, []);
+    updateAddresses([]);
+  }, [updateAddresses]);
 
   const generateRandom = useCallback(() => {
-    const list = Array.from({ length: 8 }, () => randomAddress(config.cacheSize * 4));
-    setAddresses(list);
-  }, [config.cacheSize]);
+    updateAddresses(generateAddressTrace(config, 8));
+  }, [config, updateAddresses]);
 
   const totalHits = history.filter((h) => h.hit).length;
   const totalMisses = history.filter((h) => !h.hit).length;
@@ -146,7 +148,7 @@ export function useCacheSim() {
     setConfig,
     configError,
     addresses,
-    setAddresses,
+    setAddresses: updateAddresses,
     addressIssues,
     clearAddresses,
     generateRandom,

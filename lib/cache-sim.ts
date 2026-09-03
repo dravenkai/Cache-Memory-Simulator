@@ -180,3 +180,25 @@ export function parseAddress(raw: string): number | null {
 export function formatHex(value: number, digits = 4): string {
   return "0x" + value.toString(16).toUpperCase().padStart(digits, "0");
 }
+
+export function generateAddressTrace(
+  config: Pick<CacheConfig, "blockSize">,
+  length = 8,
+  random: () => number = Math.random
+): string[] {
+  const maxBlockAddress = Math.floor(MAX_ADDRESS / config.blockSize);
+  const trace: string[] = [];
+
+  for (let i = 0; i < length; i += 2) {
+    const blockAddress = Math.floor(random() * (maxBlockAddress + 1));
+    const firstOffset = Math.floor(random() * config.blockSize);
+    const secondOffset = Math.floor(random() * config.blockSize);
+
+    trace.push(formatHex(blockAddress * config.blockSize + firstOffset));
+    if (trace.length < length) {
+      trace.push(formatHex(blockAddress * config.blockSize + secondOffset));
+    }
+  }
+
+  return trace;
+}

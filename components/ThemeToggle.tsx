@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+function getInitialDark(): boolean {
+  if (typeof window === "undefined") return true;
+  const stored = window.localStorage.getItem("cachesim-theme");
+  return stored ? stored === "dark" : true;
+}
+
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(getInitialDark);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("cachesim-theme");
-    const initialDark = stored ? stored === "dark" : true;
-    setDark(initialDark);
-    document.documentElement.classList.toggle("dark", initialDark);
-  }, []);
+    document.documentElement.classList.toggle("dark", dark);
+  }, [dark]);
 
   const toggle = () => {
     const next = !dark;
