@@ -17,7 +17,7 @@ export default function Header() {
             </svg>
           </span> */}
           <span className="hidden text-base font-semibold tracking-tight sm:inline">
-            CacheSimulator
+            L1 CacheSimulator
           </span>
         </Link>
         <div className="flex justify-center">
