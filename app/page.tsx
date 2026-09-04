@@ -66,7 +66,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="w-full max-w-2xl px-4 py-14 text-center sm:px-6">
+      {/* <section className="w-full max-w-2xl px-4 py-14 text-center sm:px-6">
         <Badge>Academic Tooling v2.0</Badge>
         <h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">
           Professional Grade
@@ -98,7 +98,7 @@ export default function Home() {
         <div className="mt-10">
           <AbstractGraphic />
         </div>
-      </section>
+      </section> */}
 
       <section className="w-full max-w-5xl px-4 py-14 text-center sm:px-6">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
